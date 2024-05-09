@@ -5,8 +5,7 @@ test.describe('User login to Demobank', () => {
   const userPassword = '12345678';
   
   test.beforeEach(async ({ page }) => {
-    const url = 'https://demo-bank.vercel.app/';
-    await page.goto(url);
+    await page.goto('/');
   })
 
   test('successful login with correct credentials', async ({ page }) => {
