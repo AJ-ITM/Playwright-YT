@@ -1,4 +1,6 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
+import { LoginPage } from '../pages/login.page';
+import { PulpitPage } from '../pages/pulpit.page';
 import { loginData } from '../test-data/login.data';
 
 test.describe('Pulpit tests', () => {
@@ -7,10 +9,11 @@ test.describe('Pulpit tests', () => {
 
     test.beforeEach(async ({ page }) => {
         await page.goto('/');
-        await page.getByTestId('login-input').fill(userId);
-        await page.getByTestId('password-input').fill(userPassword);
-        await page.getByTestId('login-button').click();
-    })
+        const loginPage = new LoginPage(page);
+        await loginPage.loginInput.fill(userId);
+        await loginPage.passwordInput.fill(userPassword);
+        await loginPage.loginButton.click();
+    });
 
     test('quick payment with correct data', async ({ page }) => {
         // Arrange
@@ -18,51 +21,49 @@ test.describe('Pulpit tests', () => {
         const transferAmount = '150';
         const transferTitle = 'pizza';
         const expectedTransferReceiver = 'Chuck Demobankowy';
-
+        const expectedConfirmationMessage = `Przelew wykonany! ${expectedTransferReceiver} - ${transferAmount},00PLN - ${transferTitle}`;
         // Act
-        await page.locator('#widget_1_transfer_receiver').selectOption(receiverId);
-        await page.locator('#widget_1_transfer_amount').fill(transferAmount);
-        await page.locator('#widget_1_transfer_title').fill(transferTitle);
-        await page.locator('#execute_btn').click();
-        await page.getByTestId('close-button').click();
-
+        const pulpitPage = new PulpitPage(page);
+        await pulpitPage.transferReceiver.selectOption(receiverId);
+        await pulpitPage.transferAmount.fill(transferAmount);
+        await pulpitPage.transferTitle.fill(transferTitle);
+        await pulpitPage.executeButton.click();
+        await pulpitPage.closeButton.click();
         // Assert
-        await expect(page.locator('#show_messages')).toHaveText(
-            `Przelew wykonany! ${expectedTransferReceiver} - ${transferAmount},00PLN - ${transferTitle}`);
+        await expect(pulpitPage.confirmationMessage).toHaveText(
+            expectedConfirmationMessage);
     });
 
     test('successful mobile top-up', async ({ page }) => {
         // Arrange
         const phoneNumber = '500 xxx xxx';
         const amountOfMoney = '50';
-
+        const expectedMessage = `Doładowanie wykonane! ${amountOfMoney},00PLN na numer ${phoneNumber}`;
         // Act
-        await page.locator('#widget_1_topup_receiver').selectOption(phoneNumber);
-        await page.locator('#widget_1_topup_amount').fill(amountOfMoney);
-        await page.locator('#widget_1_topup_agreement').click();
-        await page.getByRole('button', { name: 'doładuj telefon' }).click();
-        await page.getByTestId('close-button').click();
-
+        const pulpitPage = new PulpitPage(page);
+        await pulpitPage.receiverDropdown.selectOption(phoneNumber);
+        await pulpitPage.moneyAmount.fill(amountOfMoney);
+        await pulpitPage.agreementCheckmark.click();
+        await pulpitPage.confirmationButton.click();
+        await pulpitPage.closeButton.click();
         // Assert
-        await expect(page.locator('#show_messages')).toHaveText(`Doładowanie wykonane! ${amountOfMoney},00PLN na numer ${phoneNumber}`);
+        await expect(pulpitPage.confirmationMessage).toHaveText(expectedMessage);
     });
 
     test('correct balance after successful mobile top-up', async ({ page }) => {
         // Arrange
         const phoneNumber = '500 xxx xxx';
         const amountOfMoney = '50';
-        const expectedMessage = `Doładowanie wykonane! ${amountOfMoney},00PLN na numer ${phoneNumber}`;
         const initialBalance = await page.locator('#money_value').innerText();
         const expectedBalance = Number(initialBalance) - Number(amountOfMoney);
-
         // Act
-        await page.locator('#widget_1_topup_receiver').selectOption(phoneNumber);
-        await page.locator('#widget_1_topup_amount').fill(amountOfMoney);
-        await page.locator('#widget_1_topup_agreement').click();
-        await page.getByRole('button', { name: 'doładuj telefon' }).click();
-        await page.getByTestId('close-button').click();
-
+        const pulpitPage = new PulpitPage(page);
+        await pulpitPage.receiverDropdown.selectOption(phoneNumber);
+        await pulpitPage.moneyAmount.fill(amountOfMoney);
+        await pulpitPage.agreementCheckmark.click();
+        await pulpitPage.confirmationButton.click();
+        await pulpitPage.closeButton.click();
         // Assert
-        await expect(page.locator('#money_value')).toHaveText(`${expectedBalance}`);
+        await expect(pulpitPage.moneyValue).toHaveText(`${expectedBalance}`);
     });
 });
