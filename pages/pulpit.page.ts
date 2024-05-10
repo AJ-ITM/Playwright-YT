@@ -17,4 +17,22 @@ export class PulpitPage {
     agreementCheckmark = this.page.locator('#widget_1_topup_agreement');
     confirmationButton = this.page.getByRole('button', { name: 'doładuj telefon' });
     moneyValue = this.page.locator('#money_value');
+
+    async executeQuickPayment(receiverId: string, transferAmount: string, transferTitle: string): Promise<void> {
+        await this.transferReceiver.selectOption(receiverId);
+        await this.transferAmount.fill(transferAmount);
+        await this.transferTitle.fill(transferTitle);
+        await this.executeButton.click();
+        await this.closeButton.click();
+    }
+
+
+    async executeMobilePayment(phoneNumber: string, amountOfMoney: string): Promise<void> {
+        await this.receiverDropdown.selectOption(phoneNumber);
+        await this.moneyAmount.fill(amountOfMoney);
+        await this.agreementCheckmark.click();
+        await this.confirmationButton.click();
+        await this.closeButton.click();
+
+    }
 }

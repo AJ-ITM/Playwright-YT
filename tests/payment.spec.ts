@@ -1,37 +1,33 @@
 import { expect, test } from '@playwright/test';
 import { LoginPage } from '../pages/login.page';
 import { PaymentPage } from '../pages/payment.page';
-import { loginData } from '../test-data/login.data';
 import { PulpitPage } from '../pages/pulpit.page';
+import { loginData } from '../test-data/login.data';
 
-test.describe('Payment tests', () => {
+test.describe('Payment tests', { tag: ['@payment', '@smoke'] }, () => {
+    let paymentPage: PaymentPage;
+
     test.beforeEach(async ({ page }) => {
         const userId = loginData.userId;
         const userPassword = loginData.userPassword;
 
         await page.goto('/');
         const loginPage = new LoginPage(page);
-        await loginPage.loginInput.fill(userId);
-        await loginPage.passwordInput.fill(userPassword);
-        await loginPage.loginButton.click();
+        await loginPage.login(userId, userPassword);
 
         const pulpitPage = new PulpitPage(page);
         await pulpitPage.sideMenu.paymentButton.click();
+        paymentPage = new PaymentPage(page);
     });
 
-    test('simple payment', async ({ page }) => {
+    test('simple payment', { tag: "@positive" }, async ({ page }) => {
         // Arrange
         const transferReceiver = 'Jan Nowak';
         const transferAccount = '12 3456 7890 1234 5678 9012 34568';
         const transferAmount = '222';
         const expectedMessage = `Przelew wykonany! ${transferAmount},00PLN dla Jan Nowak`;
         // Act
-        const paymentPage = new PaymentPage(page);
-        await paymentPage.transferReceiverInput.fill(transferReceiver);
-        await paymentPage.transferToInput.fill(transferAccount);
-        await paymentPage.transferAmountInput.fill(transferAmount);
-        await paymentPage.transferButton.click();
-        await paymentPage.actionCloseButton.click();
+        await paymentPage.makeTransfer(transferReceiver, transferAccount, transferAmount)
         // Assert
         await expect(paymentPage.messageText).toHaveText(expectedMessage);
     });
